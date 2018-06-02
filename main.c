@@ -1,31 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef unsigned short u16_t;
+//typedef unsigned short dbyte;
+typedef unsigned char u8_t;
 
 typedef struct ConditionCodes
 {
-	unsigned char z:1;
-	unsigned char s:1;
-	unsigned char p:1;
-	unsigned char cy:1;
-	unsigned char ac:1;
-	unsigned char pad:1;
+	u8_t z:1;
+	u8_t s:1;
+	u8_t p:1;
+	u8_t cy:1;
+	u8_t ac:1;
+	u8_t pad:1;
 } ConditionCodes;
 
 typedef struct State8080
 {
-	unsigned char b;
-	unsigned char c;
-	unsigned char d;
-	unsigned char e;
-	unsigned char h;
-	unsigned char l;
-	unsigned char a;
-	short unsigned int sp;
-	short unsigned int pc;
-	unsigned char *memory;
+	u8_t b;
+	u8_t c;
+	u8_t d;
+	u8_t e;
+	u8_t h;
+	u8_t l;
+	u8_t a;
+	u16_t sp;
+	u16_t pc;
+	u8_t *memory;
 	ConditionCodes cc;
-	unsigned char int_enable;
+	u8_t int_enable;
 } State8080;
 
 void unimplementedInstruction(State8080 *state)
@@ -36,9 +39,9 @@ void unimplementedInstruction(State8080 *state)
 	exit(1);
 }
 
-unsigned char parity(unsigned char b)
+u8_t parity(u8_t b)
 {
-	unsigned char ctr = 0;
+	u8_t ctr = 0;
 	ctr += (b & 0x01) != 0;
 	ctr += (b & 0x02) != 0;
 	ctr += (b & 0x04) != 0;
@@ -52,12 +55,13 @@ unsigned char parity(unsigned char b)
 
 int emulate8080Op(State8080 *state)
 {
-	unsigned char *opcode = &state->memory[state->pc];
+	u8_t *opcode = &state->memory[state->pc];
 	int opbytes = 1;
 
 	// Higher precision math result
-	short unsigned int answer = 0;
-	unsigned char answerChar = 0;
+	u16_t answer = 0;
+	u8_t answerChar = 0;
+	u16_t offset = 0;
 
 	switch (*opcode)
 	{
@@ -68,8 +72,7 @@ int emulate8080Op(State8080 *state)
 			state->c = opcode[1]; 
 			opbytes = 3; 
 			break;
-		case 0x02: 
-			/* STAX */ 
+		case 0x02: /* STAX */ 
 			unimplementedInstruction(state); 
 			break;
 		case 0x03: unimplementedInstruction(state); break;
@@ -151,66 +154,196 @@ int emulate8080Op(State8080 *state)
 		case 0x45: /* MOV B, L */
 			state->b = state->l;
 			break;
-		case 0x46: unimplementedInstruction(state); break;
-		case 0x47: unimplementedInstruction(state); break;
-		case 0x48: unimplementedInstruction(state); break;
-		case 0x49: unimplementedInstruction(state); break;
-		case 0x4a: unimplementedInstruction(state); break;
-		case 0x4b: unimplementedInstruction(state); break;
-		case 0x4c: unimplementedInstruction(state); break;
-		case 0x4d: unimplementedInstruction(state); break;
-		case 0x4e: unimplementedInstruction(state); break;
-		case 0x4f: unimplementedInstruction(state); break;
-		case 0x50: unimplementedInstruction(state); break;
-		case 0x51: unimplementedInstruction(state); break;
-		case 0x52: unimplementedInstruction(state); break;
-		case 0x53: unimplementedInstruction(state); break;
-		case 0x54: unimplementedInstruction(state); break;
-		case 0x55: unimplementedInstruction(state); break;
-		case 0x56: unimplementedInstruction(state); break;
-		case 0x57: unimplementedInstruction(state); break;
-		case 0x58: unimplementedInstruction(state); break;
-		case 0x59: unimplementedInstruction(state); break;
-		case 0x5a: unimplementedInstruction(state); break;
-		case 0x5b: unimplementedInstruction(state); break;
-		case 0x5c: unimplementedInstruction(state); break;
-		case 0x5d: unimplementedInstruction(state); break;
-		case 0x5e: unimplementedInstruction(state); break;
-		case 0x5f: unimplementedInstruction(state); break;
-		case 0x60: unimplementedInstruction(state); break;
-		case 0x61: unimplementedInstruction(state); break;
-		case 0x62: unimplementedInstruction(state); break;
-		case 0x63: unimplementedInstruction(state); break;
-		case 0x64: unimplementedInstruction(state); break;
-		case 0x65: unimplementedInstruction(state); break;
-		case 0x66: unimplementedInstruction(state); break;
-		case 0x67: unimplementedInstruction(state); break;
-		case 0x68: unimplementedInstruction(state); break;
-		case 0x69: unimplementedInstruction(state); break;
-		case 0x6a: unimplementedInstruction(state); break;
-		case 0x6b: unimplementedInstruction(state); break;
-		case 0x6c: unimplementedInstruction(state); break;
-		case 0x6d: unimplementedInstruction(state); break;
-		case 0x6e: unimplementedInstruction(state); break;
-		case 0x6f: unimplementedInstruction(state); break;
-		case 0x70: unimplementedInstruction(state); break;
-		case 0x71: unimplementedInstruction(state); break;
-		case 0x72: unimplementedInstruction(state); break;
-		case 0x73: unimplementedInstruction(state); break;
-		case 0x74: unimplementedInstruction(state); break;
-		case 0x75: unimplementedInstruction(state); break;
-		case 0x76: unimplementedInstruction(state); break;
-		case 0x77: unimplementedInstruction(state); break;
-		case 0x78: unimplementedInstruction(state); break;
-		case 0x79: unimplementedInstruction(state); break;
-		case 0x7a: unimplementedInstruction(state); break;
-		case 0x7b: unimplementedInstruction(state); break;
-		case 0x7c: unimplementedInstruction(state); break;
-		case 0x7d: unimplementedInstruction(state); break;
-		case 0x7e: unimplementedInstruction(state); break;
-		case 0x7f: unimplementedInstruction(state); break;
+		case 0x46: /* MOV B, M */
+			offset = state->h << 8 | state->l;
+			state->b = state->memory[offset];
+			break;
+		case 0x47: /* MOV B, A */
+			state->b = state->a;
+			break;
+		case 0x48: /* MOV C, B */
+			state->c = state->b;
+			break;
+		case 0x49: /* MOV C, C */
+			state->c = state->c;
+			break;
+		case 0x4a: /* MOV C, D */
+			state->c = state->d;
+			break;
+		case 0x4b: /* MOV C, E */
+			state->c = state->e;
+			break;
+		case 0x4c: /* MOV C, H */
+			state->c = state->h;
+			break;
+		case 0x4d: /* MOV C, L */
+			state->c = state->l;
+			break;
+		case 0x4e: /* MOV C, M */
+			offset = state->h << 8 | state->l;
+			state->c = state->memory[offset];
+			break;
+		case 0x4f: /* MOV C, A */
+			state->c = state->a;
+			break;
+		case 0x50: /* MOV D, B */
+			state->d = state->b;
+			break;
+		case 0x51: /* MOV D, C */
+			state->d = state->c;
+			break;
+		case 0x52: /* MOV D, D */
+			state->d = state->d;
+			break;
+		case 0x53: /* MOV D, E */
+			state->d = state->e;
+			break;
+		case 0x54: /* MOV D, H */
+			state->d = state->h;
+			break;
+		case 0x55: /* MOV D, L */
+			state->d = state->l;
+			break;
+		case 0x56: /* MOV D, M */
+			offset = state->h << 8 | state->l;
+			state->d = state->memory[offset];
+			break;
+		case 0x57: /* MOV D, A */
+			state->d = state->a;
+			break;
+		case 0x58: /* MOV E, B */
+			state->e = state->b;
+			break;
+		case 0x59: /* MOV E, C */
+			state->e = state->c;
+			break;
+		case 0x5a: /* MOV E, D */
+			state->e = state->d;
+			break;
+		case 0x5b: /* MOV E, E */
+			state->e = state->e;
+			break;
+		case 0x5c: /* MOV E, H */
+			state->e = state->h;
+			break;
+		case 0x5d: /* MOV E, L */
+			state->e = state->l;
+			break;
+		case 0x5e: /* MOV E, M */
+			offset = state->h << 8 | state->l;
+			state->e = state->memory[offset];
+			break;
+		case 0x5f: /* MOV E, A */
+			state->e = state->a;
+			break;
+		case 0x60: /* MOV H, B */
+			state->h = state->b;
+			break;
+		case 0x61: /* MOV H, C */
+			state->h = state->c;
+			break;
+		case 0x62: /* MOV H, D */
+			state->h = state->d;
+			break;
+		case 0x63: /* MOV H, E */
+			state->h = state->e;
+			break;
+		case 0x64: /* MOV H, H */
+			state->h = state->h;
+			break;
+		case 0x65: /* MOV H, L */
+			state->h = state->l;
+			break;
+		case 0x66: /* MOV H, M */
+			offset = state->h << 8 | state->l;
+			state->h = state->memory[offset];
+			break;
+		case 0x67: /* MOV H, A */
+			state->h = state->a;
+			break;
+		case 0x68: /* MOV L, B */
+			state->l = state->b;
+			break;
+		case 0x69: /* MOV L, C */
+			state->l = state->c;
+			break;
+		case 0x6a: /* MOV L, D */
+			state->l = state->d;
+			break;
+		case 0x6b: /* MOV L, E */
+			state->l = state->e;
+			break;
+		case 0x6c: /* MOV L, H */
+			state->l = state->h;
+			break;
+		case 0x6d: /* MOV L, L */
+			state->l = state->l;
+			break;
+		case 0x6e: /* MOV L, M */
+			offset = state->h << 8 | state->l;
+			state->l = state->memory[offset];
+			break;
+		case 0x6f: /* MOV L, A */
+			state->l = state->a;
+			break;
+		case 0x70: /* MOV M, B */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->b;
+			break;
+		case 0x71: /* MOV M, C */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->c;
+			break;
+		case 0x72: /* MOV M, D */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->d;
+			break;
+		case 0x73: /* MOV M, E */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->e;
+			break;
+		case 0x74: /* MOV M, H */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->h;
+			break;
+		case 0x75: /* MOV M, L */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->l;
+			break;
+		case 0x76: /* HLT */
+			// "SPECIAL"
+			break;
+		case 0x77: /* MOV M, A */
+			offset = state->h << 8 | state->l;
+			state->memory[offset] = state->a;
+			break;
+		case 0x78: /* MOV A, B */
+			state->a = state->b;
+			break;
+		case 0x79: /* MOV A, C */
+			state->a = state->c;
+			break;
+		case 0x7a: /* MOV A, D */
+			state->a = state->d;
+			break;
+		case 0x7b: /* MOV A, E */
+			state->a = state->e;
+			break;
+		case 0x7c: /* MOV A, H */
+			state->a = state->h;
+			break;
+		case 0x7d: /* MOV A, L */
+			state->a = state->l;
+			break;
+		case 0x7e: /* MOV A, M */
+			offset = state->h << 8 | state->l;
+			state->a = state->memory[offset];
+			break;
+		case 0x7f: /* MOV A, A */
+			state->a = state->a;
+			break;
 		case 0x80: /* ADD B */
-			answer = (short unsigned int)state->a + (short unsigned int)state->b;
+			answer = (u16_t)state->a + (u16_t)state->b;
 			answerChar = answer & 0xff;
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answer & 0x80) == 0x80;
@@ -219,7 +352,7 @@ int emulate8080Op(State8080 *state)
 			state->a = answerChar;
 			break;
 		case 0x81: /* ADD C */
-			answer = (short unsigned int)state->a + (short unsigned int)state->c;
+			answer = (u16_t)state->a + (u16_t)state->c;
 			answerChar = answer & 0xff;
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answer & 0x80) == 0x80;
@@ -231,7 +364,17 @@ int emulate8080Op(State8080 *state)
 		case 0x83: unimplementedInstruction(state); break;
 		case 0x84: unimplementedInstruction(state); break;
 		case 0x85: unimplementedInstruction(state); break;
-		case 0x86: unimplementedInstruction(state); break;
+		case 0x86:; /* ADD M (add byte at HL offset) */
+			u16_t offset = state->h << 8 | state->l;
+			answer = (u16_t)state->a 
+				+ state->memory[offset];
+			answerChar = answer & 0xff; 
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answer & 0x80) == 0x80;
+			state->cc.cy = answer > 0xff;
+			state->cc.p = parity(answerChar);
+			state->a = answerChar;
+			break;
 		case 0x87: unimplementedInstruction(state); break;
 		case 0x88: unimplementedInstruction(state); break;
 		case 0x89: unimplementedInstruction(state); break;
@@ -295,7 +438,17 @@ int emulate8080Op(State8080 *state)
 		case 0xc3: unimplementedInstruction(state); opbytes = 3; break;
 		case 0xc4: unimplementedInstruction(state); opbytes = 3; break;
 		case 0xc5: unimplementedInstruction(state); break;
-		case 0xc6: unimplementedInstruction(state); opbytes = 2; break;
+		case 0xc6: /* ADI byte */
+			answer = (u16_t) state-> a +
+				(u16_t) opcode[1];
+			answerChar = answer & 0xff;
+			state->cc.z = (answer & 0xff) == 0;
+			state->cc.s = (answer & 0x80) == 0x80;
+			state->cc.cy = answer > 0xff;
+			state->cc.p = parity(answerChar);
+			state->a = answerChar;
+			opbytes = 2; 
+			break;
 		case 0xc7: unimplementedInstruction(state); break;
 		case 0xc8: unimplementedInstruction(state); break;
 		case 0xc9: unimplementedInstruction(state); break;
@@ -377,7 +530,7 @@ void print(State8080 *state)
 int main()
 {
 	printf("Hello world.\n");
-	unsigned char memory[65536] = 
+	u8_t memory[65536] = 
 		{0x01, 0x02, 0x03, 0x80, 0x00};
 
 	ConditionCodes conditionCodes =
