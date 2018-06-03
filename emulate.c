@@ -188,13 +188,17 @@ int emulate8080Op(State8080 *s)
 			s->cc.cy = (s->a & 0x01) == 0x01;
 			s->a = s->a >> 1 | (s->a & 0x80);
 			break;
-		case 0x20: unimpl(s); break;
+		case 0x20: /* RIM "SPECIAL" */ unimpl(s); break;
 		case 0x21: /* LXI H, D16 */ 
 			s->h = opcode[2]; 
 			s->l = opcode[1]; 
 			opbytes = 3; 
 			break;
-		case 0x22: unimpl(s); opbytes = 3; break;
+		case 0x22: /* SHLD adr */
+			s->memory[opcode[2]<<8 | opcode[1]] = s->l;
+			s->memory[(opcode[2]<<8 | opcode[1]) + 1] = s->h;
+			opbytes = 3; 
+			break;
 		case 0x23: /* INX H */
 			answer = (s->h << 8 | s->l) + 1;
 			s->h = (answer & 0xff00) >> 8;
@@ -219,11 +223,11 @@ int emulate8080Op(State8080 *s)
 			s->cc.ac = ((s->h & 0x80) == 0x00) && s->cc.s;
 			s->h = answerChar;
 			break;
-		case 0x26:  /* MVI H, D8 */ 
+		case 0x26: /* MVI H, D8 */ 
 			s->h = opcode[1];
 			opbytes = 2; 
 			break;
-		case 0x27: unimpl(s); break;
+		case 0x27: /* DAA "SPECIAL" */ unimpl(s); break;
 		case 0x28: /* - */ unimpl(s); break;
 		case 0x29: /* DAD H */
 			answer = s->h << 1 | s->l << 1;
@@ -231,7 +235,11 @@ int emulate8080Op(State8080 *s)
 			s->h = (answer & 0xff00) >> 8;
 			s->l = answer & 0x00ff;
 			break;
-		case 0x2a: unimpl(s); opbytes = 3; break;
+		case 0x2a: /* SHLD adr */
+			s->l = s->memory[opcode[2]<<8 | opcode[1]];
+			s->h = s->memory[(opcode[2]<<8 | opcode[1]) + 1];
+			opbytes = 3; 
+			break;
 		case 0x2b: /* DCX H */
 			answer = (s->h << 8 | s->l) - 1;
 			s->h = (answer & 0xff00) >> 8;
@@ -256,17 +264,22 @@ int emulate8080Op(State8080 *s)
 			s->cc.ac = ((s->l & 0x80) == 0x00) && s->cc.s;
 			s->l = answerChar;
 			break;
-		case 0x2e:  /* MVI L, D8 */ 
+		case 0x2e: /* MVI L, D8 */ 
 			s->l = opcode[1];
 			opbytes = 2; 
 			break;
-		case 0x2f: unimpl(s); break;
-		case 0x30: unimpl(s); break;
+		case 0x2f: /* CMA */
+			s->a = ~s->a;
+			break;
+		case 0x30: /* SIM "SPECIAL" */ unimpl(s); break;
 		case 0x31: /* LXI SP, D16 */ 
 			s->sp = opcode[2] << 8 | opcode[1]; 
 			opbytes = 3; 
 			break;
-		case 0x32: unimpl(s); opbytes = 3; break;
+		case 0x32: /* STA adr */
+			s->memory[opcode[2]<<8 | opcode[1]] = s->a;
+			opbytes = 3; 
+			break;
 		case 0x33: /* INX SP */
 			s->sp++;
 			break;
@@ -291,12 +304,14 @@ int emulate8080Op(State8080 *s)
 			s->cc.ac = ((s->memory[offset] & 0x80) == 0x00) && s->cc.s;
 			s->memory[offset] = answerChar;
 			break;
-		case 0x36:  /* MVI M, D8 */
+		case 0x36: /* MVI M, D8 */
 			offset = s->h << 8 | s->l; 
 			s->memory[offset] = opcode[1];
 			opbytes = 2; 
 			break;
-		case 0x37: unimpl(s); break;
+		case 0x37: /* STC */
+			s->cc.cy = 1;
+			break;
 		case 0x38: /* - */ unimpl(s); break;
 		case 0x39: /* DAD SP */
 			answer = (s->h << 8 | s->l) + (s->sp);
@@ -306,7 +321,10 @@ int emulate8080Op(State8080 *s)
 			s->h = (answer & 0xff00) >> 8;
 			s->l = answer & 0x00ff;
 			break;
-		case 0x3a: unimpl(s); opbytes = 3; break;
+		case 0x3a: /* LDA adr */
+			s->a = s->memory[opcode[2]<<8 | opcode[1]];
+			opbytes = 3; 
+			break;
 		case 0x3b: /* DCX SP */
 			s->sp--;
 			break;
@@ -329,7 +347,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.ac = ((s->a & 0x80) == 0x00) && s->cc.s;
 			s->a = answerChar;
 			break;
-		case 0x3e:  /* MVI A, D8 */ 
+		case 0x3e: /* MVI A, D8 */ 
 			s->a = opcode[1];
 			opbytes = 2; 
 			break;
