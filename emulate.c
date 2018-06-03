@@ -1175,24 +1175,44 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answer == 0x00;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
-			s->cc.cy = s->a < s->a;
+			s->cc.cy = 0; // s->a < s->a
 			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
 			// TODO
 			s->cc.ac = 0;
 			break;
 		case 0xc0: /* RNZ */
-			uniml(s);
+			unimpl(s);
 			// TODO: ???
 			break;
 		case 0xc1: /* POP B */
 			s->c = s->memory[s->sp];
 			s->b = s->memory[s->sp + 1];
-			s->sp += 2;
+			s->sp += 2; // stack shrinks to the right
 			break;
-		case 0xc2: unimpl(s); opbytes = 3; break;
-		case 0xc3: unimpl(s); opbytes = 3; break;
-		case 0xc4: unimpl(s); opbytes = 3; break;
-		case 0xc5: unimpl(s); break;
+		case 0xc2: /* JNZ adr */
+			if (!s->cc.z)
+			{
+				s->pc = opcode[2]<<8 | opcode[1];
+			}
+			opbytes = 3; 
+			break;
+		case 0xc3: /* JMP adr */
+			s->pc = opcode[2]<<8 | opcode[1];
+			opbytes = 3; 
+			break;
+		case 0xc4: /* CNZ adr */
+			if (!s->cc.z)
+			{
+				// TODO: CALL adr
+			}
+			unimpl(s);
+			opbytes = 3;
+			break;
+		case 0xc5: /* PUSH B */
+			s->memory[s->sp - 2] = s->c;
+			s->memory[s->sp - 1] = s->b;
+			s->sp -= 2; // stack grows to the left
+			break;
 		case 0xc6: /* ADI byte */
 			answer = (u16_t) s-> a +
 				opcode[1];
@@ -1204,15 +1224,59 @@ int emulate8080Op(State8080 *s)
 			s->a = answerChar;
 			opbytes = 2; 
 			break;
-		case 0xc7: unimpl(s); break;
-		case 0xc8: unimpl(s); break;
-		case 0xc9: unimpl(s); break;
-		case 0xca: unimpl(s); opbytes = 3; break;
+		case 0xc7: /* RST 0 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0000;
+			break;
+		case 0xc8: /* RZ */
+			if (s->cc.z)
+			{
+				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+			}
+			break;
+		case 0xc9: /* RET */
+			s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+			break;
+		case 0xca: /* JZ adr */
+			if (s->cc.z)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
 		case 0xcb: /* - */ unimpl(s); break;
-		case 0xcc: unimpl(s); opbytes = 3; break;
-		case 0xcd: unimpl(s); opbytes = 3; break;
-		case 0xce: unimpl(s); opbytes = 2; break;
-		case 0xcf: unimpl(s); break;
+		case 0xcc: /* CZ adr */
+			if (s->cc.z)
+			{
+				s->memory[s->sp - 2] = (s->pc & 0x00ff);
+				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+				s->sp -= 2;
+				s->pc = opcode[2]<<8 | opcode[1];
+			}
+			opbytes = 3; 
+			break;
+		case 0xcd: /* CALL adr */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = opcode[2]<<8 | opcode[1];
+			opbytes = 3; 
+			break;
+		case 0xce: /* ACI D8 */
+			answer = s->a + opcode[1] + s->cc.cy;
+			answerChar = answer & 0xff;
+			s->cc.cy = answer > 0xff;
+			s->a = answerChar;
+			opbytes = 2; 
+			break;
+		case 0xcf: /* RST 1 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0008;
+			break;
 		case 0xd0: unimpl(s); break;
 		case 0xd1: /* POP D */
 			s->e = s->memory[s->sp];
@@ -1224,7 +1288,12 @@ int emulate8080Op(State8080 *s)
 		case 0xd4: unimpl(s); opbytes = 3; break;
 		case 0xd5: unimpl(s); break;
 		case 0xd6: unimpl(s); opbytes = 2; break;
-		case 0xd7: unimpl(s); break;
+		case 0xd7: /* RST 2 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0010;
+			break;
 		case 0xd8: unimpl(s); break;
 		case 0xd9: /* - */ unimpl(s); break;
 		case 0xda: unimpl(s); opbytes = 3; break;
@@ -1232,7 +1301,12 @@ int emulate8080Op(State8080 *s)
 		case 0xdc: unimpl(s); opbytes = 3; break;
 		case 0xdd: /* - */ unimpl(s); break;
 		case 0xde: unimpl(s); opbytes = 2; break;
-		case 0xdf: unimpl(s); break;
+		case 0xdf: /* RST 3 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0018;
+			break;
 		case 0xe0: unimpl(s); break;
 		case 0xe1: /* POP H */
 			s->l = s->memory[s->sp];
@@ -1244,7 +1318,12 @@ int emulate8080Op(State8080 *s)
 		case 0xe4: unimpl(s); opbytes = 3; break;
 		case 0xe5: unimpl(s); break;
 		case 0xe6: unimpl(s); opbytes = 2; break;
-		case 0xe7: unimpl(s); break;
+		case 0xe7: /* RST 4 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0020;
+			break;
 		case 0xe8: unimpl(s); break;
 		case 0xe9: unimpl(s); break;
 		case 0xea: unimpl(s); opbytes = 3; break;
@@ -1252,7 +1331,12 @@ int emulate8080Op(State8080 *s)
 		case 0xec: unimpl(s); opbytes = 3; break;
 		case 0xed: /* - */ unimpl(s); break;
 		case 0xee: unimpl(s); opbytes = 2; break;
-		case 0xef: unimpl(s); break;
+		case 0xef: /* RST 5 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0028;
+			break;
 		case 0xf0: unimpl(s); break;
 		case 0xf1: /* POP PSW */
 			// 7 6 5 4 3 2 1 0
@@ -1276,7 +1360,12 @@ int emulate8080Op(State8080 *s)
 		case 0xf4: unimpl(s); opbytes = 3; break;
 		case 0xf5: unimpl(s); break;
 		case 0xf6: unimpl(s); opbytes = 2; break;
-		case 0xf7: unimpl(s); break;
+		case 0xf7: /* RST 6 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0030;
+			break;
 		case 0xf8: unimpl(s); break;
 		case 0xf9: unimpl(s); break;
 		case 0xfa: unimpl(s); opbytes = 3; break;
@@ -1284,7 +1373,12 @@ int emulate8080Op(State8080 *s)
 		case 0xfc: unimpl(s); opbytes = 2; break;
 		case 0xfd: /* - */ unimpl(s); break;
 		case 0xfe: unimpl(s); opbytes = 2; break;
-		case 0xff: unimpl(s); break;
+		case 0xff: /* RST 7 */
+			s->memory[s->sp - 2] = (s->pc & 0x00ff);
+			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+			s->sp -= 2;
+			s->pc = 0x0038;
+			break;
 	};
 
 	s->pc += opbytes;
