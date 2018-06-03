@@ -5,20 +5,21 @@ void print(State8080 *state)
 {
 	printf("af:%04x", 
 		state->a        << 8 
-		/*| state->cc.z   << 7
-		| state->cc.s   << 6
-		| state->cc.p   << 5
-		| state->cc.cy  << 4
-		| state->cc.ac  << 3
-		| state->cc.pad << 2*/);
+		// | state->cc.s   << 6
+		// | state->cc.z   << 7
+		// | state->cc.ac  << 3
+		// | state->cc.pad << 2
+		// | state->cc.p   << 5
+		// | state->cc.cy  << 4
+		);
 
 	printf(" %c%c%c%c%c%c", 
-		state->cc.s   ? '.' : 's', 
-		state->cc.z   ? '.' : 'z', 
-		state->cc.ac  ? '.' : '?', //h? 
-		state->cc.pad ? '.' : '?', //h?
-		state->cc.p   ? '.' : 'p', 
-		state->cc.cy  ? '.' : 'c'); 
+		state->cc.s   ? 's' : '.', 
+		state->cc.z   ? 'z' : '.', 
+		state->cc.ac  ? '?' : '.', //h? 
+		state->cc.pad ? '?' : '.', //h?
+		state->cc.p   ? 'p' : '.', 
+		state->cc.cy  ? 'c' : '.'); 
 
 	printf(" bc:%04x de:%04x hl:%04x (hl):%02x sp:%04x pc:%04x (pc):%02x",
 		state->b << 8 | state->c, 
