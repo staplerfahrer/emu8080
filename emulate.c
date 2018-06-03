@@ -351,7 +351,9 @@ int emulate8080Op(State8080 *s)
 			s->a = opcode[1];
 			opbytes = 2; 
 			break;
-		case 0x3f: unimpl(s); break;
+		case 0x3f: /* CMC */ 
+			s->cc.cy = ~s->cc.cy;
+			break;
 		case 0x40: /* MOV B, B */
 			s->b = s->b; 
 			break;
@@ -709,6 +711,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->b;
 			s->a = answerChar;
 			break;
@@ -717,6 +720,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->c;
 			s->a = answerChar;
 			break;
@@ -725,6 +729,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->d;
 			s->a = answerChar;
 			break;
@@ -733,6 +738,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->e;
 			s->a = answerChar;
 			break;
@@ -741,6 +747,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->h;
 			s->a = answerChar;
 			break;
@@ -749,6 +756,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->l;
 			s->a = answerChar;
 			break;
@@ -758,6 +766,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->a < s->l;
 			s->a = answerChar;
 			break;
@@ -766,6 +775,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = 0;
 			s->a = answerChar;
 			break;
@@ -775,6 +785,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->b + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -784,6 +795,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->c + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -793,6 +805,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->d + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -802,6 +815,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->e + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -811,6 +825,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->h + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -820,6 +835,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->l + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -830,6 +846,7 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = (u16_t)s->a < ((u16_t)s->memory[offset] + s->cc.cy);
 			s->a = answerChar;
 			break;
@@ -839,26 +856,180 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
+			// TODO: HOW?
 			s->cc.cy = s->cc.cy;
 			s->a = answerChar;
 			break;
-		case 0xa0: unimpl(s); break;
-		case 0xa1: unimpl(s); break;
-		case 0xa2: unimpl(s); break;
-		case 0xa3: unimpl(s); break;
-		case 0xa4: unimpl(s); break;
-		case 0xa5: unimpl(s); break;
-		case 0xa6: unimpl(s); break;
-		case 0xa7: unimpl(s); break;
-		case 0xa8: unimpl(s); break;
-		case 0xa9: unimpl(s); break;
-		case 0xaa: unimpl(s); break;
-		case 0xab: unimpl(s); break;
-		case 0xac: unimpl(s); break;
-		case 0xad: unimpl(s); break;
-		case 0xae: unimpl(s); break;
-		case 0xaf: unimpl(s); break;
-		case 0xb0: unimpl(s); break;
+		case 0xa0: /* ANA B */
+			s->a &= s->b;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa1: /* ANA C */
+			s->a &= s->c;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa2: /* ANA D */
+			s->a &= s->d;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa3: /* ANA E */
+			s->a &= s->e;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa4: /* ANA H */
+			s->a &= s->h;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa5: /* ANA L */
+			s->a &= s->l;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa6: /* ANA M */
+			s->a &= s->memory[s->h<<8 | s->l];
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa7: /* ANA A */
+			s->a &= s->a;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa8: /* XRA B */
+			s->a ^= s->b;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xa9: /* XRA C */
+			s->a ^= s->c;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xaa: /* XRA D */
+			s->a ^= s->d;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xab: /* XRA E */
+			s->a ^= s->e;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xac: /* XRA E */
+			s->a ^= s->e;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xad: /* XRA H */
+			s->a ^= s->h;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xae: /* XRA L */
+			s->a ^= s->l;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xaf: /* XRA M */
+			s->a ^= s->memory[s->h<<8 | s->l];
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
+		case 0xb0: /* XRA A */
+			s->a ^= s->a;
+			s->cc.z = s->a == 0x00;
+			s->cc.s = (s->a & 0x80) == 0x80;
+			s->cc.p = parity(s->a);
+			s->cc.cy = 0;
+			// p 4-3: "set when carrying from (0-based) bit 3 to 4"
+			// TODO
+			s->cc.ac = 0;
+			break;
 		case 0xb1: unimpl(s); break;
 		case 0xb2: unimpl(s); break;
 		case 0xb3: unimpl(s); break;
