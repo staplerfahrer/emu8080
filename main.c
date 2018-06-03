@@ -5,6 +5,36 @@
 #include "cpufunc.h"
 #include "printState.h"
 
+State8080 *newState(State8080 *stp, u8_t *memory)
+{
+	ConditionCodes conditionCodes =
+		{
+			.z   = 0,
+			.s   = 0,
+			.p   = 0,
+			.cy  = 0,
+			.ac  = 0,
+			.pad = 0
+		};
+
+	*stp =
+		(State8080) {
+			.b          = 0,
+			.c          = 0,
+			.d          = 0,
+			.e          = 0,
+			.h          = 0,
+			.l          = 0,
+			.a          = 0,
+			.sp         = 0,
+			.pc         = 0,
+			.memory     = memory,
+			.cc         = conditionCodes,
+			.int_enable = 0
+		};
+
+	return stp;
+}
 
 int emulate8080Op(State8080 *state)
 {
@@ -25,68 +55,238 @@ int emulate8080Op(State8080 *state)
 			state->c = opcode[1]; 
 			opbytes = 3; 
 			break;
-		case 0x02: /* STAX */ 
-			unimplementedInstruction(state); 
+		case 0x02: /* STAX B */ 
+			offset = state->b << 8 | state->c;
+			state->memory[offset] = state->a; 
 			break;
-		case 0x03: unimplementedInstruction(state); break;
-		case 0x04: unimplementedInstruction(state); break;
-		case 0x05: unimplementedInstruction(state); break;
-		case 0x06: unimplementedInstruction(state); opbytes = 2; break;
+		case 0x03: /* INX B */
+			answer = (state->b << 8 | state->c) + 1;
+			state->b = answer & 0xff00;
+			state->c = answer & 0x00ff;
+			break;
+		case 0x04: /* INR B */
+			answer = state->b + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->b = answerChar;
+			break;
+		case 0x05: /* DCR B */
+			answer = state->b - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->b & 0x80) == 0x00) && state->cc.s;
+			state->b = answerChar;
+			break;
+		case 0x06: /* MVI B, D8 */ 
+			state->b = opcode[1];
+			opbytes = 2; 
+			break;
 		case 0x07: unimplementedInstruction(state); break;
 		case 0x08: unimplementedInstruction(state); break;
 		case 0x09: unimplementedInstruction(state); break;
 		case 0x0a: unimplementedInstruction(state); break;
 		case 0x0b: unimplementedInstruction(state); break;
-		case 0x0c: unimplementedInstruction(state); break;
-		case 0x0d: unimplementedInstruction(state); break;
+		case 0x0c: /* INR C */
+			answer = state->c + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->c = answerChar;
+			break;
+		case 0x0d: /* DCR C */
+			answer = state->c - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->c & 0x80) == 0x00) && state->cc.s;
+			state->c = answerChar;
+			break;
 		case 0x0e: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x0f: unimplementedInstruction(state); break;
 		case 0x10: unimplementedInstruction(state); break;
-		case 0x11: unimplementedInstruction(state); opbytes = 3; break;
-		case 0x12: unimplementedInstruction(state); break;
-		case 0x13: unimplementedInstruction(state); break;
-		case 0x14: unimplementedInstruction(state); break;
-		case 0x15: unimplementedInstruction(state); break;
+		case 0x11: /* LXI D, D16 */ 
+			state->d = opcode[2]; 
+			state->e = opcode[1]; 
+			opbytes = 3; 
+			break;
+		case 0x12: /* STAX D */ 
+			offset = state->d << 8 | state->e;
+			state->memory[offset] = state->a; 
+			break;
+		case 0x13: /* INX D */
+			answer = (state->d << 8 | state->e) + 1;
+			state->d = answer & 0xff00;
+			state->e = answer & 0x00ff;
+			break;
+		case 0x14: /* INR D */
+			answer = state->d + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->d = answerChar;
+			break;
+		case 0x15: /* DCR D */
+			answer = state->d - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->d & 0x80) == 0x00) && state->cc.s;
+			state->d = answerChar;
+			break;
 		case 0x16: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x17: unimplementedInstruction(state); break;
 		case 0x18: unimplementedInstruction(state); break;
 		case 0x19: unimplementedInstruction(state); break;
 		case 0x1a: unimplementedInstruction(state); break;
 		case 0x1b: unimplementedInstruction(state); break;
-		case 0x1c: unimplementedInstruction(state); break;
-		case 0x1d: unimplementedInstruction(state); break;
+		case 0x1c: /* INR E */
+			answer = state->e + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->e = answerChar;
+			break;
+		case 0x1d: /* DCR E */
+			answer = state->e - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->e & 0x80) == 0x00) && state->cc.s;
+			state->e = answerChar;
+			break;
 		case 0x1e: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x1f: unimplementedInstruction(state); break;
 		case 0x20: unimplementedInstruction(state); break;
-		case 0x21: unimplementedInstruction(state); opbytes = 3; break;
+		case 0x21: /* LXI H, D16 */ 
+			state->h = opcode[2]; 
+			state->l = opcode[1]; 
+			opbytes = 3; 
+			break;
 		case 0x22: unimplementedInstruction(state); opbytes = 3; break;
-		case 0x23: unimplementedInstruction(state); break;
-		case 0x24: unimplementedInstruction(state); break;
-		case 0x25: unimplementedInstruction(state); break;
+		case 0x23: /* INX H */
+			answer = (state->h << 8 | state->l) + 1;
+			state->h = answer & 0xff00;
+			state->l = answer & 0x00ff;
+			break;
+		case 0x24: /* INR H */
+			answer = state->h + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->h = answerChar;
+			break;
+		case 0x25: /* DCR H */
+			answer = state->h - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->h & 0x80) == 0x00) && state->cc.s;
+			state->h = answerChar;
+			break;
 		case 0x26: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x27: unimplementedInstruction(state); break;
 		case 0x28: unimplementedInstruction(state); break;
 		case 0x29: unimplementedInstruction(state); break;
 		case 0x2a: unimplementedInstruction(state); opbytes = 3; break;
 		case 0x2b: unimplementedInstruction(state); break;
-		case 0x2c: unimplementedInstruction(state); break;
-		case 0x2d: unimplementedInstruction(state); break;
+		case 0x2c: /* INR L */
+			answer = state->l + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->l = answerChar;
+			break;
+		case 0x2d: /* DCR L */
+			answer = state->l - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->l & 0x80) == 0x00) && state->cc.s;
+			state->l = answerChar;
+			break;
 		case 0x2e: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x2f: unimplementedInstruction(state); break;
 		case 0x30: unimplementedInstruction(state); break;
-		case 0x31: unimplementedInstruction(state); opbytes = 3; break;
+		case 0x31: /* LXI SP, D16 */ 
+			state->sp = opcode[2] << 8 | opcode[1]; 
+			opbytes = 3; 
+			break;
 		case 0x32: unimplementedInstruction(state); opbytes = 3; break;
-		case 0x33: unimplementedInstruction(state); break;
-		case 0x34: unimplementedInstruction(state); break;
-		case 0x35: unimplementedInstruction(state); break;
+		case 0x33: /* INX SP */
+			state->sp++;
+			break;
+		case 0x34: /* INR M */
+			offset = state->h << 8 | state->l;
+			answer = state->memory[offset] + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->memory[offset] = answerChar;
+			break;
+		case 0x35: /* DCR M */
+			offset = state->h << 8 | state->l;
+			answer = state->memory[offset] - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->memory[offset] & 0x80) == 0x00) && state->cc.s;
+			state->memory[offset] = answerChar;
+			break;
 		case 0x36: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x37: unimplementedInstruction(state); break;
 		case 0x38: unimplementedInstruction(state); break;
 		case 0x39: unimplementedInstruction(state); break;
 		case 0x3a: unimplementedInstruction(state); opbytes = 3; break;
 		case 0x3b: unimplementedInstruction(state); break;
-		case 0x3c: unimplementedInstruction(state); break;
-		case 0x3d: unimplementedInstruction(state); break;
+		case 0x3c: /* INR A */
+			answer = state->a + 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.ac = answer > 0xff;
+			state->a = answerChar;
+			break;
+		case 0x3d: /* DCR A */
+			answer = state->a - 1;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			// if previously positive, now negative
+			state->cc.ac = ((state->a & 0x80) == 0x00) && state->cc.s;
+			state->a = answerChar;
+			break;
 		case 0x3e: unimplementedInstruction(state); opbytes = 2; break;
 		case 0x3f: unimplementedInstruction(state); break;
 		case 0x40: /* MOV B, B */
@@ -446,7 +646,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->b;
 			state->a = answerChar;
 			break;
 		case 0x91: /* SUB C */
@@ -454,7 +654,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->c;
 			state->a = answerChar;
 			break;
 		case 0x92: /* SUB D */
@@ -462,7 +662,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->d;
 			state->a = answerChar;
 			break;
 		case 0x93: /* SUB E */
@@ -470,7 +670,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->e;
 			state->a = answerChar;
 			break;
 		case 0x94: /* SUB H */
@@ -478,7 +678,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->h;
 			state->a = answerChar;
 			break;
 		case 0x95: /* SUB L */
@@ -486,7 +686,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->l;
 			state->a = answerChar;
 			break;
 		case 0x96: /* SUB M */
@@ -495,7 +695,7 @@ int emulate8080Op(State8080 *state)
 			state->cc.z = answerChar == 0;
 			state->cc.s = (answerChar & 0x80) == 0x80;
 			state->cc.p = parity(answerChar);
-			state->cc.cy = 0;
+			state->cc.cy = state->a < state->l;
 			state->a = answerChar;
 			break;
 		case 0x97: /* SUB A */
@@ -516,18 +716,68 @@ int emulate8080Op(State8080 *state)
 			state->a = answerChar;
 			break;
 		case 0x99: /* SBB C */
+			answer = (u16_t)state->a - state->c - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->c + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9a: /* SBB D */
+			answer = (u16_t)state->a - state->d - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->d + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9b: /* SBB E */
+			answer = (u16_t)state->a - state->e - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->e + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9c: /* SBB H */
+			answer = (u16_t)state->a - state->h - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->h + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9d: /* SBB L */
+			answer = (u16_t)state->a - state->l - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->l + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9e: /* SBB M */
+			offset = state->h << 8 | state->l;
+			answer = (u16_t)state->a - state->memory[offset] - state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = (u16_t)state->a < ((u16_t)state->memory[offset] + state->cc.cy);
+			state->a = answerChar;
 			break;
 		case 0x9f: /* SBB A */
+			answer = -state->cc.cy;
+			answerChar = answer & 0xff;
+			state->cc.z = answerChar == 0;
+			state->cc.s = (answerChar & 0x80) == 0x80;
+			state->cc.p = parity(answerChar);
+			state->cc.cy = state->cc.cy;
+			state->a = answerChar;
 			break;
 		case 0xa0: unimplementedInstruction(state); break;
 		case 0xa1: unimplementedInstruction(state); break;
@@ -571,7 +821,7 @@ int emulate8080Op(State8080 *state)
 			answer = (u16_t) state-> a +
 				opcode[1];
 			answerChar = answer & 0xff;
-			state->cc.z = (answer & 0xff) == 0;
+			state->cc.z = answerChar == 0;
 			state->cc.s = (answer & 0x80) == 0x80;
 			state->cc.cy = answer > 0xff;
 			state->cc.p = parity(answerChar);
@@ -642,44 +892,22 @@ int emulate8080Op(State8080 *state)
 	return 0;
 }
 
-
 int main()
 {
 	printf("Hello world.\n");
+
 	u8_t memory[65536] = 
-		{0x01, 0x02, 0x03, 0x80, 0x00};
+		// {0x01, 0x01, 0xff, 0x80, 0x81};
+		{0x06 /*mvi b*/, 0x01, 0x90 /*sub b*/};
 
-	ConditionCodes conditionCodes =
-		{
-			.z = 1,
-			.s = 1,
-			.p = 1,
-			.cy = 1,
-			.ac = 1,
-			.pad = 1
-		};
+	State8080 st = {};
+	State8080 *state = newState(&st, &memory[0]);
 
-	State8080 state =
-		{
-			.b = 0,
-			.c = 0,
-			.d = 0,
-			.e = 0,
-			.h = 0,
-			.l = 0,
-			.a = 0,
-			.sp = 0,
-			.pc = 0,
-			.memory = &memory[0],
-			.cc = conditionCodes,
-			.int_enable = 0
-		};
-
-	print(&state);
+	print(state);
 	for (int i = 0; i < 5; i++)
 	{
-		emulate8080Op(&state);
-		print(&state);
+		emulate8080Op(state);
+		print(state);
 	}
 	return 0;
 }
