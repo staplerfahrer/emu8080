@@ -10,7 +10,7 @@ typedef struct ConditionCodes
 	u8_t p:1;
 	u8_t cy:1;
 	u8_t ac:1;
-	u8_t pad:1;
+	u8_t pad:3;
 } ConditionCodes;
 
 typedef struct State8080
