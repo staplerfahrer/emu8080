@@ -1181,8 +1181,11 @@ int emulate8080Op(State8080 *s)
 			s->cc.ac = 0;
 			break;
 		case 0xc0: /* RNZ */
-			unimpl(s);
-			// TODO: ???
+			if (!s->cc.z)
+			{
+				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				s->sp += 2;
+			}
 			break;
 		case 0xc1: /* POP B */
 			s->c = s->memory[s->sp];
@@ -1203,9 +1206,11 @@ int emulate8080Op(State8080 *s)
 		case 0xc4: /* CNZ adr */
 			if (!s->cc.z)
 			{
-				// TODO: CALL adr
+				s->memory[s->sp - 2] = (s->pc & 0x00ff);
+				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
+				s->sp -= 2;
+				s->pc = opcode[2]<<8 | opcode[1];
 			}
-			unimpl(s);
 			opbytes = 3;
 			break;
 		case 0xc5: /* PUSH B */
@@ -1234,10 +1239,12 @@ int emulate8080Op(State8080 *s)
 			if (s->cc.z)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				s->sp += 2;
 			}
 			break;
 		case 0xc9: /* RET */
 			s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+			s->sp += 2;
 			break;
 		case 0xca: /* JZ adr */
 			if (s->cc.z)
@@ -1277,13 +1284,25 @@ int emulate8080Op(State8080 *s)
 			s->sp -= 2;
 			s->pc = 0x0008;
 			break;
-		case 0xd0: unimpl(s); break;
+		case 0xd0: /* RNC */
+			if (!s->cc.cy)
+			{
+				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				s->sp += 2;
+			}
+			break;
 		case 0xd1: /* POP D */
 			s->e = s->memory[s->sp];
 			s->d = s->memory[s->sp + 1];
 			s->sp += 2;
 			break;
-		case 0xd2: unimpl(s); opbytes = 3; break;
+		case 0xd2: /* JNC adr */
+			if (!s->cc.cy)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
 		case 0xd3: unimpl(s); opbytes = 2; break;
 		case 0xd4: unimpl(s); opbytes = 3; break;
 		case 0xd5: unimpl(s); break;
@@ -1294,9 +1313,21 @@ int emulate8080Op(State8080 *s)
 			s->sp -= 2;
 			s->pc = 0x0010;
 			break;
-		case 0xd8: unimpl(s); break;
+		case 0xd8: /* RC */
+			if (s->cc.cy)
+			{
+				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				s->sp += 2;
+			}
+			break;
 		case 0xd9: /* - */ unimpl(s); break;
-		case 0xda: unimpl(s); opbytes = 3; break;
+		case 0xda: /* JC adr */
+			if (s->cc.cy)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
 		case 0xdb: unimpl(s); opbytes = 2; break;
 		case 0xdc: unimpl(s); opbytes = 3; break;
 		case 0xdd: /* - */ unimpl(s); break;
@@ -1313,7 +1344,13 @@ int emulate8080Op(State8080 *s)
 			s->h = s->memory[s->sp + 1];
 			s->sp += 2;
 			break;
-		case 0xe2: unimpl(s); opbytes = 3; break;
+		case 0xe2: /* JPO adr */
+			if (!s->cc.p)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
 		case 0xe3: unimpl(s); break;
 		case 0xe4: unimpl(s); opbytes = 3; break;
 		case 0xe5: unimpl(s); break;
@@ -1326,7 +1363,13 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xe8: unimpl(s); break;
 		case 0xe9: unimpl(s); break;
-		case 0xea: unimpl(s); opbytes = 3; break;
+		case 0xea: /* JPE adr */
+			if (s->cc.p)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
 		case 0xeb: unimpl(s); break;
 		case 0xec: unimpl(s); opbytes = 3; break;
 		case 0xed: /* - */ unimpl(s); break;
@@ -1355,8 +1398,14 @@ int emulate8080Op(State8080 *s)
 			s->a = s->memory[s->sp + 1];
 			s->sp += 2;
 			break;
-		case 0xf2: unimpl(s); opbytes = 3; break;
-		case 0xf3: unimpl(s); break;
+		case 0xf2: /* JP adr */
+			if (!s->cc.s)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
+		case 0xf3: /* DI "SPECIAL" */ unimpl(s); break;
 		case 0xf4: unimpl(s); opbytes = 3; break;
 		case 0xf5: unimpl(s); break;
 		case 0xf6: unimpl(s); opbytes = 2; break;
@@ -1368,8 +1417,14 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xf8: unimpl(s); break;
 		case 0xf9: unimpl(s); break;
-		case 0xfa: unimpl(s); opbytes = 3; break;
-		case 0xfb: unimpl(s); break;
+		case 0xfa: /* JM adr */
+			if (s->cc.s)
+			{
+				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+			}
+			opbytes = 3; 
+			break;
+		case 0xfb: /* EI "SPECIAL" */ unimpl(s); break;
 		case 0xfc: unimpl(s); opbytes = 2; break;
 		case 0xfd: /* - */ unimpl(s); break;
 		case 0xfe: unimpl(s); opbytes = 2; break;
