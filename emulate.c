@@ -68,7 +68,11 @@ int emulate8080Op(State8080 *s)
 			offset = s->b << 8 | s->c;
 			s->a = s->memory[offset];
 			break;
-		case 0x0b: unimpl(s); break;
+		case 0x0b: /* DCX B */
+			answer = (s->b << 8 | s->c) - 1;
+			s->b = (answer & 0xff00) >> 8;
+			s->c = answer & 0x00ff;
+			break;
 		case 0x0c: /* INR C */
 			answer = s->c + 1;
 			answerChar = answer & 0xff;
@@ -152,7 +156,11 @@ int emulate8080Op(State8080 *s)
 			offset = s->d << 8 | s->e;
 			s->a = s->memory[offset];
 			break;
-		case 0x1b: unimpl(s); break;
+		case 0x1b: /* DCX D */
+			answer = (s->d << 8 | s->e) - 1;
+			s->d = (answer & 0xff00) >> 8;
+			s->e = answer & 0x00ff;
+			break;
 		case 0x1c: /* INR E */
 			answer = s->e + 1;
 			answerChar = answer & 0xff;
@@ -224,7 +232,11 @@ int emulate8080Op(State8080 *s)
 			s->l = answer & 0x00ff;
 			break;
 		case 0x2a: unimpl(s); opbytes = 3; break;
-		case 0x2b: unimpl(s); break;
+		case 0x2b: /* DCX H */
+			answer = (s->h << 8 | s->l) - 1;
+			s->h = (answer & 0xff00) >> 8;
+			s->l = answer & 0x00ff;
+			break;
 		case 0x2c: /* INR L */
 			answer = s->l + 1;
 			answerChar = answer & 0xff;
@@ -295,7 +307,9 @@ int emulate8080Op(State8080 *s)
 			s->l = answer & 0x00ff;
 			break;
 		case 0x3a: unimpl(s); opbytes = 3; break;
-		case 0x3b: unimpl(s); break;
+		case 0x3b: /* DCX SP */
+			s->sp--;
+			break;
 		case 0x3c: /* INR A */
 			answer = s->a + 1;
 			answerChar = answer & 0xff;
