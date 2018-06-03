@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include "structs.h"
 
-void unimplementedInstruction(State8080 *state)
+void unimpl(State8080 *s)
 {
 	printf("Error: unimplemented instruction at PC %04x.\n",
-		state->pc);
+		s->pc);
 	exit(1);
 }
 
