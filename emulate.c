@@ -4,11 +4,11 @@
 int emulate8080Op(State8080 *s)
 {
 	u8_t *opcode = &s->memory[s->pc];
-	int opbytes = 1;
+	int pcAdd = 1;
 
 	u16_t answer = 0; // For carry bit
 	u8_t answerChar = 0;
-	u16_t offset = 0;
+	u16_t addy = 0;
 
 	switch (*opcode)
 	{
@@ -17,11 +17,11 @@ int emulate8080Op(State8080 *s)
 		case 0x01: /* LXI B, D16 */
 			s->b = opcode[2];
 			s->c = opcode[1];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x02: /* STAX B */
-			offset = s->b << 8 | s->c;
-			s->memory[offset] = s->a;
+			addy = s->b << 8 | s->c;
+			s->memory[addy] = s->a;
 			break;
 		case 0x03: /* INX B */
 			answer = (s->b << 8 | s->c) + 1;
@@ -44,12 +44,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->b & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->b & 0x80) == 0) && s->cc.s;
 			s->b = answerChar;
 			break;
 		case 0x06: /* MVI B, D8 */
 			s->b = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x07: /* RLC */
 			s->cc.cy = (s->a & 0x80) == 0x80;
@@ -65,8 +65,8 @@ int emulate8080Op(State8080 *s)
 			s->l = answer & 0x00ff;
 			break;
 		case 0x0a: /* LDAX B */
-			offset = s->b << 8 | s->c;
-			s->a = s->memory[offset];
+			addy = s->b << 8 | s->c;
+			s->a = s->memory[addy];
 			break;
 		case 0x0b: /* DCX B */
 			answer = (s->b << 8 | s->c) - 1;
@@ -89,12 +89,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->c & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->c & 0x80) == 0) && s->cc.s;
 			s->c = answerChar;
 			break;
 		case 0x0e: /* MVI C, D8 */
 			s->c = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x0f: /* RRC */
 			s->cc.cy = (s->a & 0x01) == 0x01;
@@ -104,11 +104,11 @@ int emulate8080Op(State8080 *s)
 		case 0x11: /* LXI D, D16 */
 			s->d = opcode[2];
 			s->e = opcode[1];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x12: /* STAX D */
-			offset = s->d << 8 | s->e;
-			s->memory[offset] = s->a;
+			addy = s->d << 8 | s->e;
+			s->memory[addy] = s->a;
 			break;
 		case 0x13: /* INX D */
 			answer = (s->d << 8 | s->e) + 1;
@@ -131,12 +131,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->d & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->d & 0x80) == 0) && s->cc.s;
 			s->d = answerChar;
 			break;
 		case 0x16: /* MVI D, D8 */
 			s->d = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x17: /* RAL */
 			answerChar = (s->a & 0x80) == 0x80;
@@ -153,8 +153,8 @@ int emulate8080Op(State8080 *s)
 			s->l = answer & 0x00ff;
 			break;
 		case 0x1a: /* LDAX D */
-			offset = s->d << 8 | s->e;
-			s->a = s->memory[offset];
+			addy = s->d << 8 | s->e;
+			s->a = s->memory[addy];
 			break;
 		case 0x1b: /* DCX D */
 			answer = (s->d << 8 | s->e) - 1;
@@ -177,12 +177,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->e & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->e & 0x80) == 0) && s->cc.s;
 			s->e = answerChar;
 			break;
 		case 0x1e: /* MVI E, D8 */
 			s->e = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x1f: /* RAR */
 			s->cc.cy = (s->a & 0x01) == 0x01;
@@ -194,12 +194,12 @@ int emulate8080Op(State8080 *s)
 		case 0x21: /* LXI H, D16 */
 			s->h = opcode[2];
 			s->l = opcode[1];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x22: /* SHLD adr */
 			s->memory[opcode[2]<<8 | opcode[1]] = s->l;
 			s->memory[(opcode[2]<<8 | opcode[1]) + 1] = s->h;
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x23: /* INX H */
 			answer = (s->h << 8 | s->l) + 1;
@@ -222,12 +222,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->h & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->h & 0x80) == 0) && s->cc.s;
 			s->h = answerChar;
 			break;
 		case 0x26: /* MVI H, D8 */
 			s->h = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x27: /* DAA "SPECIAL" */
 			unimpl(s);
@@ -242,7 +242,7 @@ int emulate8080Op(State8080 *s)
 		case 0x2a: /* SHLD adr */
 			s->l = s->memory[opcode[2]<<8 | opcode[1]];
 			s->h = s->memory[(opcode[2]<<8 | opcode[1]) + 1];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x2b: /* DCX H */
 			answer = (s->h << 8 | s->l) - 1;
@@ -265,12 +265,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->l & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->l & 0x80) == 0) && s->cc.s;
 			s->l = answerChar;
 			break;
 		case 0x2e: /* MVI L, D8 */
 			s->l = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x2f: /* CMA */
 			s->a = ~s->a;
@@ -280,40 +280,40 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0x31: /* LXI SP, D16 */
 			s->sp = opcode[2] << 8 | opcode[1];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x32: /* STA adr */
 			s->memory[opcode[2]<<8 | opcode[1]] = s->a;
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x33: /* INX SP */
 			s->sp++;
 			break;
 		case 0x34: /* INR M */
-			offset = s->h << 8 | s->l;
-			answer = s->memory[offset] + 1;
+			addy = s->h << 8 | s->l;
+			answer = s->memory[addy] + 1;
 			answerChar = answer & 0xff;
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			s->cc.ac = answer > 0xff;
-			s->memory[offset] = answerChar;
+			s->memory[addy] = answerChar;
 			break;
 		case 0x35: /* DCR M */
-			offset = s->h << 8 | s->l;
-			answer = s->memory[offset] - 1;
+			addy = s->h << 8 | s->l;
+			answer = s->memory[addy] - 1;
 			answerChar = answer & 0xff;
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->memory[offset] & 0x80) == 0x00) && s->cc.s;
-			s->memory[offset] = answerChar;
+			s->cc.ac = ((s->memory[addy] & 0x80) == 0) && s->cc.s;
+			s->memory[addy] = answerChar;
 			break;
 		case 0x36: /* MVI M, D8 */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = opcode[1];
-			opbytes = 2;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = opcode[1];
+			pcAdd = 2;
 			break;
 		case 0x37: /* STC */
 			s->cc.cy = 1;
@@ -329,7 +329,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0x3a: /* LDA adr */
 			s->a = s->memory[opcode[2]<<8 | opcode[1]];
-			opbytes = 3;
+			pcAdd = 3;
 			break;
 		case 0x3b: /* DCX SP */
 			s->sp--;
@@ -350,12 +350,12 @@ int emulate8080Op(State8080 *s)
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// if previously positive, now negative
-			s->cc.ac = ((s->a & 0x80) == 0x00) && s->cc.s;
+			s->cc.ac = ((s->a & 0x80) == 0) && s->cc.s;
 			s->a = answerChar;
 			break;
 		case 0x3e: /* MVI A, D8 */
 			s->a = opcode[1];
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0x3f: /* CMC */
 			s->cc.cy = ~s->cc.cy;
@@ -379,8 +379,8 @@ int emulate8080Op(State8080 *s)
 			s->b = s->l;
 			break;
 		case 0x46: /* MOV B, M */
-			offset = s->h << 8 | s->l;
-			s->b = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->b = s->memory[addy];
 			break;
 		case 0x47: /* MOV B, A */
 			s->b = s->a;
@@ -404,8 +404,8 @@ int emulate8080Op(State8080 *s)
 			s->c = s->l;
 			break;
 		case 0x4e: /* MOV C, M */
-			offset = s->h << 8 | s->l;
-			s->c = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->c = s->memory[addy];
 			break;
 		case 0x4f: /* MOV C, A */
 			s->c = s->a;
@@ -429,8 +429,8 @@ int emulate8080Op(State8080 *s)
 			s->d = s->l;
 			break;
 		case 0x56: /* MOV D, M */
-			offset = s->h << 8 | s->l;
-			s->d = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->d = s->memory[addy];
 			break;
 		case 0x57: /* MOV D, A */
 			s->d = s->a;
@@ -454,8 +454,8 @@ int emulate8080Op(State8080 *s)
 			s->e = s->l;
 			break;
 		case 0x5e: /* MOV E, M */
-			offset = s->h << 8 | s->l;
-			s->e = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->e = s->memory[addy];
 			break;
 		case 0x5f: /* MOV E, A */
 			s->e = s->a;
@@ -479,8 +479,8 @@ int emulate8080Op(State8080 *s)
 			s->h = s->l;
 			break;
 		case 0x66: /* MOV H, M */
-			offset = s->h << 8 | s->l;
-			s->h = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->h = s->memory[addy];
 			break;
 		case 0x67: /* MOV H, A */
 			s->h = s->a;
@@ -504,42 +504,42 @@ int emulate8080Op(State8080 *s)
 			s->l = s->l;
 			break;
 		case 0x6e: /* MOV L, M */
-			offset = s->h << 8 | s->l;
-			s->l = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->l = s->memory[addy];
 			break;
 		case 0x6f: /* MOV L, A */
 			s->l = s->a;
 			break;
 		case 0x70: /* MOV M, B */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->b;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->b;
 			break;
 		case 0x71: /* MOV M, C */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->c;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->c;
 			break;
 		case 0x72: /* MOV M, D */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->d;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->d;
 			break;
 		case 0x73: /* MOV M, E */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->e;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->e;
 			break;
 		case 0x74: /* MOV M, H */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->h;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->h;
 			break;
 		case 0x75: /* MOV M, L */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->l;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->l;
 			break;
 		case 0x76: /* HLT */
 			// "SPECIAL"
 			break;
 		case 0x77: /* MOV M, A */
-			offset = s->h << 8 | s->l;
-			s->memory[offset] = s->a;
+			addy = s->h << 8 | s->l;
+			s->memory[addy] = s->a;
 			break;
 		case 0x78: /* MOV A, B */
 			s->a = s->b;
@@ -560,8 +560,8 @@ int emulate8080Op(State8080 *s)
 			s->a = s->l;
 			break;
 		case 0x7e: /* MOV A, M */
-			offset = s->h << 8 | s->l;
-			s->a = s->memory[offset];
+			addy = s->h << 8 | s->l;
+			s->a = s->memory[addy];
 			break;
 		case 0x7f: /* MOV A, A */
 			s->a = s->a;
@@ -620,9 +620,9 @@ int emulate8080Op(State8080 *s)
 			s->cc.cy = answer > 0xff;
 			s->a = answerChar;
 			break;
-		case 0x86: /* ADD M (add byte at HL offset) */
-			offset = s->h << 8 | s->l;
-			answer = (u16_t)s->a + s->memory[offset];
+		case 0x86: /* ADD M (add byte at HL addy) */
+			addy = s->h << 8 | s->l;
+			answer = (u16_t)s->a + s->memory[addy];
 			answerChar = answer & 0xff;
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
@@ -694,8 +694,8 @@ int emulate8080Op(State8080 *s)
 			s->a = answerChar;
 			break;
 		case 0x8e: /* ADC M */
-			offset = s->h << 8 | s->l;
-			answer = (u16_t)s->a + s->memory[offset] + s->cc.cy;
+			addy = s->h << 8 | s->l;
+			answer = (u16_t)s->a + s->memory[addy] + s->cc.cy;
 			answerChar = answer & 0xff;
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
@@ -767,8 +767,8 @@ int emulate8080Op(State8080 *s)
 			s->a = answerChar;
 			break;
 		case 0x96: /* SUB M */
-			offset = s->h << 8 | s->l;
-			answerChar = s->a - s->memory[offset];
+			addy = s->h << 8 | s->l;
+			answerChar = s->a - s->memory[addy];
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
@@ -846,14 +846,14 @@ int emulate8080Op(State8080 *s)
 			s->a = answerChar;
 			break;
 		case 0x9e: /* SBB M */
-			offset = s->h << 8 | s->l;
-			answer = (u16_t)s->a - s->memory[offset] - s->cc.cy;
+			addy = s->h << 8 | s->l;
+			answer = (u16_t)s->a - s->memory[addy] - s->cc.cy;
 			answerChar = answer & 0xff;
 			s->cc.z = answerChar == 0;
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			// TODO: HOW?
-			s->cc.cy = (u16_t)s->a < ((u16_t)s->memory[offset] + s->cc.cy);
+			s->cc.cy = (u16_t)s->a < ((u16_t)s->memory[addy] + s->cc.cy);
 			s->a = answerChar;
 			break;
 		case 0x9f: /* SBB A */
@@ -868,7 +868,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa0: /* ANA B */
 			s->a &= s->b;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -878,7 +878,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa1: /* ANA C */
 			s->a &= s->c;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -888,7 +888,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa2: /* ANA D */
 			s->a &= s->d;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -898,7 +898,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa3: /* ANA E */
 			s->a &= s->e;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -908,7 +908,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa4: /* ANA H */
 			s->a &= s->h;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -918,7 +918,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa5: /* ANA L */
 			s->a &= s->l;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -928,7 +928,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa6: /* ANA M */
 			s->a &= s->memory[s->h<<8 | s->l];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -938,7 +938,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa7: /* ANA A */
 			s->a &= s->a;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -948,7 +948,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa8: /* XRA B */
 			s->a ^= s->b;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -958,7 +958,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xa9: /* XRA C */
 			s->a ^= s->c;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -968,7 +968,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xaa: /* XRA D */
 			s->a ^= s->d;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -978,7 +978,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xab: /* XRA E */
 			s->a ^= s->e;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -988,7 +988,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xac: /* XRA H */
 			s->a ^= s->h;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -998,7 +998,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xad: /* XRA L */
 			s->a ^= s->l;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1008,7 +1008,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xae: /* XRA M */
 			s->a ^= s->memory[s->h<<8 | s->l];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1018,7 +1018,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xaf: /* XRA A */
 			s->a ^= s->a;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1028,7 +1028,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb0: /* ORA B */
 			s->a |= s->b;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1038,7 +1038,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb1: /* ORA C */
 			s->a |= s->c;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1048,7 +1048,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb2: /* ORA D */
 			s->a |= s->d;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1058,7 +1058,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb3: /* ORA E */
 			s->a |= s->e;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1068,7 +1068,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb4: /* ORA H */
 			s->a |= s->h;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1078,7 +1078,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb5: /* ORA L */
 			s->a |= s->l;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1088,7 +1088,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb6: /* ORA M */
 			s->a |= s->memory[s->h<<8 | s->l];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1098,7 +1098,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb7: /* ORA A */
 			s->a |= s->a;
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0;
@@ -1108,7 +1108,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb8: /* CMP B */
 			answer = s->a - s->b;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->b;
@@ -1118,7 +1118,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xb9: /* CMP C */
 			answer = s->a - s->c;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->c;
@@ -1128,7 +1128,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xba: /* CMP D */
 			answer = s->a - s->d;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->d;
@@ -1138,7 +1138,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xbb: /* CMP E */
 			answer = s->a - s->e;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->e;
@@ -1148,7 +1148,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xbc: /* CMP H */
 			answer = s->a - s->h;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->h;
@@ -1158,7 +1158,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xbd: /* CMP L */
 			answer = s->a - s->l;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->l;
@@ -1168,7 +1168,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xbe: /* CMP M */
 			answer = s->a - s->memory[s->h<<8 | s->l];
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = s->a < s->memory[s->h<<8 | s->l];
@@ -1178,7 +1178,7 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xbf: /* CMP A */
 			answer = s->a - s->a;
-			s->cc.z = answer == 0x00;
+			s->cc.z = answer == 0;
 			s->cc.s = (answer & 0x80) == 0x80;
 			s->cc.p = parity(answer);
 			s->cc.cy = 0; // s->a < s->a
@@ -1190,6 +1190,7 @@ int emulate8080Op(State8080 *s)
 			if (!s->cc.z)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
@@ -1199,25 +1200,27 @@ int emulate8080Op(State8080 *s)
 			s->sp += 2; // stack shrinks to the right
 			break;
 		case 0xc2: /* JNZ adr */
+			pcAdd = 3;
 			if (!s->cc.z)
 			{
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xc3: /* JMP adr */
 			s->pc = opcode[2]<<8 | opcode[1];
-			opbytes = 3;
+			pcAdd = 0;
 			break;
 		case 0xc4: /* CNZ adr */
+			pcAdd = 3;
 			if (!s->cc.z)
 			{
 				s->memory[s->sp - 2] = (s->pc & 0x00ff);
 				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 				s->sp -= 2;
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xc5: /* PUSH B */
 			s->memory[--s->sp] = s->b;
@@ -1232,67 +1235,74 @@ int emulate8080Op(State8080 *s)
 			s->cc.cy = answer > 0xff;
 			s->cc.p = parity(answerChar);
 			s->a = answerChar;
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xc7: /* RST 0 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0000;
+			pcAdd = 0;
 			break;
 		case 0xc8: /* RZ */
 			if (s->cc.z)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
 		case 0xc9: /* RET */
 			s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+			pcAdd = 0;
 			s->sp += 2;
 			break;
 		case 0xca: /* JZ adr */
+			pcAdd = 3;
 			if (s->cc.z)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xcb: /* - */ unimpl(s); break;
 		case 0xcc: /* CZ adr */
+			pcAdd = 3;
 			if (s->cc.z)
 			{
 				s->memory[s->sp - 2] = (s->pc & 0x00ff);
 				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 				s->sp -= 2;
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xcd: /* CALL adr */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = opcode[2]<<8 | opcode[1];
-			opbytes = 3;
+			pcAdd = 0;
 			break;
 		case 0xce: /* ACI D8 */
 			answer = s->a + opcode[1] + s->cc.cy;
 			answerChar = answer & 0xff;
 			s->cc.cy = answer > 0xff;
 			s->a = answerChar;
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xcf: /* RST 1 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0008;
+			pcAdd = 0;
 			break;
 		case 0xd0: /* RNC */
 			if (!s->cc.cy)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
@@ -1302,25 +1312,27 @@ int emulate8080Op(State8080 *s)
 			s->sp += 2;
 			break;
 		case 0xd2: /* JNC adr */
+			pcAdd = 3;
 			if (!s->cc.cy)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xd3: /* OUT D8 "SPECIAL" */
 			unimpl(s);
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xd4: /* CNC adr */
+			pcAdd = 3;
 			if (!s->cc.cy)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xd5: /* PUSH D */
 			s->memory[--s->sp] = s->d;
@@ -1328,68 +1340,74 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xd6: /* SUI D8 */
 			answerChar = s->a - opcode[1];
-			s->cc.z = answerChar == 0x00;
+			s->cc.z = answerChar == 0;
 			s->cc.cy = !s->cc.s & ((answerChar & 0x80) == 0x80);
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			s->a = answerChar;
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xd7: /* RST 2 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0010;
+			pcAdd = 0;
 			break;
 		case 0xd8: /* RC */
 			if (s->cc.cy)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
 		case 0xd9: /* - */ unimpl(s); break;
 		case 0xda: /* JC adr */
+			pcAdd = 3;
 			if (s->cc.cy)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xdb: /* IN D8 "SPECIAL" */
 			unimpl(s);
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xdc: /* CC adr */
+			pcAdd = 3;
 			if (s->cc.cy)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xdd: /* - */ unimpl(s); break;
 		case 0xde: /* SBI D8 */
 			answerChar = s->a - opcode[1] - s->cc.cy;
-			s->cc.z = answerChar == 0x00;
+			s->cc.z = answerChar == 0;
 			s->cc.cy = !s->cc.s & ((answerChar & 0x80) == 0x80);
 			s->cc.s = (answerChar & 0x80) == 0x80;
 			s->cc.p = parity(answerChar);
 			s->a = answerChar;
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xdf: /* RST 3 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0018;
+			pcAdd = 0;
 			break;
 		case 0xe0: /* RPO */
 			if (!s->cc.p)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
@@ -1399,11 +1417,12 @@ int emulate8080Op(State8080 *s)
 			s->sp += 2;
 			break;
 		case 0xe2: /* JPO adr */
+			pcAdd = 3;
 			if (!s->cc.p)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xe3: /* XTHL */
 			answer = s->h<<8 | s->l;
@@ -1413,14 +1432,15 @@ int emulate8080Op(State8080 *s)
 			s->memory[s->sp+1] = (answer & 0xff00) >> 8;
 			break;
 		case 0xe4: /* CPO adr */
+			pcAdd = 3;
 			if (!s->cc.p)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xe5: /* PUSH H */
 			s->memory[--s->sp] = s->h;
@@ -1428,35 +1448,39 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xe6: /* ANI D8 */
 			s->a &= opcode[1];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0; // TODO still don't know what to do here
 			s->cc.ac = 0; // TODO or here
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xe7: /* RST 4 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0020;
+			pcAdd = 0;
 			break;
 		case 0xe8: /* RPE */
 			if (s->cc.p)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
 		case 0xe9: /* PCHL */
 			s->pc = s->h<<8 | s->l;
+			pcAdd = 0;
 			break;
 		case 0xea: /* JPE adr */
+			pcAdd = 3;
 			if (s->cc.p)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xeb: /* XCHG */
 			answerChar = s->d;
@@ -1467,35 +1491,38 @@ int emulate8080Op(State8080 *s)
 			s->l = answerChar;
 			break;
 		case 0xec: /* CPE adr */
+			pcAdd = 3;
 			if (s->cc.p)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xed: /* - */ unimpl(s); break;
 		case 0xee: /* XRI D8 */
 			s->a ^= opcode[1];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0; // TODO still don't know what to do here
 			s->cc.ac = 0; // TODO or here
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xef: /* RST 5 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0028;
+			pcAdd = 0;
 			break;
 		case 0xf0: /* RP */
 			if (!s->cc.s)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
@@ -1517,24 +1544,26 @@ int emulate8080Op(State8080 *s)
 			s->sp += 2;
 			break;
 		case 0xf2: /* JP adr */
+			pcAdd = 3;
 			if (!s->cc.s)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xf3: /* DI "SPECIAL" */
 			unimpl(s);
 			break;
 		case 0xf4: /* CP adr */
+			pcAdd = 3;
 			if (!s->cc.s)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xf5: /* PUSH PSW */
 			s->memory[--s->sp] = s->a;
@@ -1552,23 +1581,25 @@ int emulate8080Op(State8080 *s)
 			break;
 		case 0xf6: /* ORI D8 */
 			s->a |= opcode[1];
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.cy = 0; // TODO still don't know what to do here
 			s->cc.ac = 0; // TODO or here
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xf7: /* RST 6 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0030;
+			pcAdd = 0;
 			break;
 		case 0xf8: /* RM */
 			if (s->cc.s)
 			{
 				s->pc = s->memory[s->sp+1]<<8 | s->memory[s->sp];
+				pcAdd = 0;
 				s->sp += 2;
 			}
 			break;
@@ -1576,45 +1607,48 @@ int emulate8080Op(State8080 *s)
 			s->sp = s->h<<8 | s->l;
 			break;
 		case 0xfa: /* JM adr */
+			pcAdd = 3;
 			if (s->cc.s)
 			{
 				s->pc = s->memory[opcode[2]]<<8 | s->memory[opcode[1]];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xfb: /* EI "SPECIAL" */
 			unimpl(s);
 			break;
 		case 0xfc: /* CM adr */
+			pcAdd = 3;
 			if (s->cc.s)
 			{
 				// a cleaner CALL
 				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
 				s->memory[--s->sp] = (s->pc & 0x00ff);
 				s->pc = opcode[2]<<8 | opcode[1];
+				pcAdd = 0;
 			}
-			opbytes = 3;
 			break;
 		case 0xfd: /* - */ unimpl(s); break;
 		case 0xfe: /* CPI D8 */
 			s->a -= opcode[1];
 			// wasn't negative, now is
 			s->cc.cy = !s->cc.s & ((s->a & 0x80) == 0x80);
-			s->cc.z = s->a == 0x00;
+			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
 			s->cc.ac = 0; // TODO or here
-			opbytes = 2;
+			pcAdd = 2;
 			break;
 		case 0xff: /* RST 7 */
 			s->memory[s->sp - 2] = (s->pc & 0x00ff);
 			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
 			s->sp -= 2;
 			s->pc = 0x0038;
+			pcAdd = 0;
 			break;
 	};
 
-	s->pc += opbytes;
+	s->pc += pcAdd;
 
 	return 0;
 }
