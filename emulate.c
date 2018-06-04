@@ -1215,9 +1215,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (!s->cc.z)
 			{
-				s->memory[s->sp - 2] = (s->pc & 0x00ff);
-				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-				s->sp -= 2;
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1238,9 +1238,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xc7: /* RST 0 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0000;
 			pcAdd = 0;
 			break;
@@ -1270,18 +1270,17 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (s->cc.z)
 			{
-				s->memory[s->sp - 2] = (s->pc & 0x00ff);
-				s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-				s->sp -= 2;
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
 			break;
 		case 0xcd: /* CALL adr */
-			todo fix ALL calls to store PC plus opbytes count
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 3;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = opcode[2]<<8 | opcode[1];
 			pcAdd = 0;
 			break;
@@ -1293,9 +1292,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xcf: /* RST 1 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0008;
 			pcAdd = 0;
 			break;
@@ -1328,9 +1327,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (!s->cc.cy)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1349,9 +1348,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xd7: /* RST 2 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0010;
 			pcAdd = 0;
 			break;
@@ -1380,9 +1379,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (s->cc.cy)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1398,9 +1397,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xdf: /* RST 3 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0018;
 			pcAdd = 0;
 			break;
@@ -1436,9 +1435,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (!s->cc.p)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1457,9 +1456,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xe7: /* RST 4 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0020;
 			pcAdd = 0;
 			break;
@@ -1495,9 +1494,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (s->cc.p)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1513,9 +1512,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xef: /* RST 5 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0028;
 			pcAdd = 0;
 			break;
@@ -1559,9 +1558,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (!s->cc.s)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1590,9 +1589,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xf7: /* RST 6 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0030;
 			pcAdd = 0;
 			break;
@@ -1622,9 +1621,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 3;
 			if (s->cc.s)
 			{
-				// a cleaner CALL
-				s->memory[--s->sp] = (s->pc & 0xff00) >> 8;
-				s->memory[--s->sp] = (s->pc & 0x00ff);
+				temp16 = s->pc + 3;
+				s->memory[--s->sp] = temp16 >> 8;   // H byte
+				s->memory[--s->sp] = temp16 & 0xff; // L byte
 				s->pc = opcode[2]<<8 | opcode[1];
 				pcAdd = 0;
 			}
@@ -1641,9 +1640,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0xff: /* RST 7 */
-			s->memory[s->sp - 2] = (s->pc & 0x00ff);
-			s->memory[s->sp - 1] = (s->pc & 0xff00) >> 8;
-			s->sp -= 2;
+			temp16 = s->pc + 1;
+			s->memory[--s->sp] = temp16 >> 8;   // H byte
+			s->memory[--s->sp] = temp16 & 0xff; // L byte
 			s->pc = 0x0038;
 			pcAdd = 0;
 			break;
