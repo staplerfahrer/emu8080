@@ -97,8 +97,9 @@ int emulate8080Op(State8080 *s)
 			pcAdd = 2;
 			break;
 		case 0x0f: /* RRC */
-			s->cc.cy = (s->a & 0x01) == 0x01;
-			s->a = s->a >> 1 | s->cc.cy << 7;
+			s->a = s->a >> 1 | (s->a & 0x01) << 7;
+			s->cc.cy = s->a & 0x01;
+			todo check all rotate instructions and compares
 			break;
 		case 0x10: /* - */ unimpl(s); break;
 		case 0x11: /* LXI D, D16 */
@@ -1451,8 +1452,8 @@ int emulate8080Op(State8080 *s)
 			s->cc.z = s->a == 0;
 			s->cc.s = (s->a & 0x80) == 0x80;
 			s->cc.p = parity(s->a);
-			s->cc.cy = 0; // TODO still don't know what to do here
-			s->cc.ac = 0; // TODO or here
+			s->cc.cy = 0; // book says ANI clears CY
+			s->cc.ac = 0; // TODO what to do here
 			pcAdd = 2;
 			break;
 		case 0xe7: /* RST 4 */
